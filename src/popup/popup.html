@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>モルモットモード</title>
+  <link rel="stylesheet" href="../content/moru.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="preview" id="previewBox" title="クリックするとポップコーンジャンプ">
+      <div class="moru st-idle" id="preview"><div class="moru-flip"></div></div>
+    </div>
+    <div class="hero-text">
+      <h1>モルモットモード</h1>
+      <p class="site" id="siteLabel">読み込み中…</p>
+    </div>
+  </header>
+
+  <main>
+    <label class="row switch">
+      <span class="label">モルモットを表示する</span>
+      <input type="checkbox" id="enabled"><span class="track"></span>
+    </label>
+
+    <label class="row switch">
+      <span class="label">このサイトでは表示しない</span>
+      <input type="checkbox" id="siteOff"><span class="track"></span>
+    </label>
+
+    <section class="group">
+      <h2>すがた</h2>
+      <div class="swatches" id="colors"></div>
+      <div class="chips" id="accessories"></div>
+      <button class="shuffle" id="shuffleBtn" hidden>🎲 すがたをシャッフル</button>
+    </section>
+
+    <section class="group">
+      <h2>おおきさ・うごき</h2>
+      <label class="row range">
+        <span class="label">匹数 <b id="countVal">1</b></span>
+        <input type="range" id="count" min="1" max="5" step="1">
+      </label>
+      <label class="row range">
+        <span class="label">大きさ <b id="sizeVal">64</b></span>
+        <input type="range" id="size" min="36" max="140" step="2">
+      </label>
+      <label class="row range">
+        <span class="label">速さ <b id="speedVal">1.0</b></span>
+        <input type="range" id="speed" min="0.4" max="2.5" step="0.1">
+      </label>
+    </section>
+
+    <section class="group">
+      <h2>ふるまい</h2>
+      <label class="row check">
+        <input type="checkbox" id="walkOnElements">
+        <span class="label">ページの要素の上に乗る</span>
+      </label>
+      <label class="row check">
+        <input type="checkbox" id="followCursor">
+        <span class="label">マウスカーソルを追いかける</span>
+      </label>
+      <label class="row check">
+        <input type="checkbox" id="keyboardControls">
+        <span class="label">キーボードで動かす（←→/WASD・スペースでジャンプ）</span>
+      </label>
+      <label class="row check">
+        <input type="checkbox" id="wheek">
+        <span class="label">「プイプイ！」の吹き出しを出す</span>
+      </label>
+    </section>
+
+    <button class="cta" id="wheekBtn">プイプイ！と鳴かせる</button>
+    <button class="link" id="reset">設定を初期値に戻す</button>
+  </main>
+
+  <script src="../shared/settings.js"></script>
+  <script src="../content/character.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

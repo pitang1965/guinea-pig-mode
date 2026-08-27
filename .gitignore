@@ -1,0 +1,16 @@
+# 依存パッケージ（現状は無し。将来ツールを足したとき用）
+node_modules/
+
+# 拡張機能のパッケージ
+*.zip
+*.crx
+*.pem
+
+# OS / エディタが作る一時ファイル
+Thumbs.db
+.DS_Store
+*.log
+
+# tools/ の一時ファイル（先頭が _ のものは使い捨て）
+tools/_*
+icons/icon512.png

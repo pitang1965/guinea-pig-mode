@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>モルモット プレビュー</title>
+  <link rel="stylesheet" href="../src/content/moru.css">
+  <style>
+    body { margin: 0; padding: 20px; background: #fdf7ee; font-family: system-ui, sans-serif; color: #3b2b1e; }
+    h2 { font-size: 13px; margin: 18px 0 6px; color: #8b7860; letter-spacing: .08em; }
+    .grid { display: flex; flex-wrap: wrap; gap: 18px; }
+    .cell { text-align: center; }
+    .cell .moru { position: relative; width: 136px; height: 80px; transform: none !important; }
+    .cell p { margin: 2px 0 0; font-size: 11px; color: #8b7860; }
+  </style>
+</head>
+<body>
+  <h2>COLORS</h2><div class="grid" id="colors"></div>
+  <h2>ACCESSORIES</h2><div class="grid" id="accessories"></div>
+  <h2>STATES</h2><div class="grid" id="states"></div>
+
+  <script src="../src/content/character.js"></script>
+  <script>
+    let n = 0;
+    function cell(parent, label, opts, state) {
+      const box = document.createElement('div');
+      box.className = 'cell';
+      const moru = document.createElement('div');
+      moru.className = 'moru st-' + state;
+      const flip = document.createElement('div');
+      flip.className = 'moru-flip';
+      flip.innerHTML = MoruCharacter.build(Object.assign({ id: 'p' + n++ }, opts));
+      moru.appendChild(flip);
+      const p = document.createElement('p');
+      p.textContent = label;
+      box.append(moru, p);
+      document.getElementById(parent).appendChild(box);
+    }
+
+    for (const c of Object.keys(MoruCharacter.PALETTES)) {
+      cell('colors', c, { color: c, accessory: 'none' }, 'idle');
+    }
+    for (const a of ['flower', 'ribbon', 'hat', 'glasses', 'crown', 'carrot']) {
+      cell('accessories', a, { color: 'ginger', accessory: a }, 'idle');
+    }
+    for (const s of ['idle', 'walk', 'jump', 'fall', 'sleep', 'eat', 'drag', 'popcorn']) {
+      cell('states', s, { color: 'tricolor', accessory: 'none' }, s);
+    }
+  </script>
+</body>
+</html>

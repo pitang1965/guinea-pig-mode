@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>モルモットモード 動作確認ハーネス</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #fff; color: #222; }
+    h1 { font-size: 24px; margin: 0 0 12px; }
+    .box { width: 300px; height: 70px; background: #dfe7f2; border-radius: 10px; margin: 16px 0; display: grid; place-items: center; }
+    #log { position: fixed; right: 8px; top: 8px; max-width: 380px; font: 12px/1.4 monospace; color: #b00; white-space: pre-wrap; z-index: 999999; }
+    #hud { position: fixed; left: 8px; top: 8px; font: 12px/1.4 monospace; color: #0a7; z-index: 999999; }
+  </style>
+</head>
+<body>
+  <div id="log"></div>
+  <div id="hud">…</div>
+  <h1>モルモットモード 動作確認ハーネス</h1>
+  <div class="box">足場 A</div>
+  <h2>見出し（足場になる）</h2>
+  <div class="box">足場 B</div>
+  <p>本文テキスト。</p>
+
+  <script>
+    // 拡張機能 API のスタブ
+    const STUB_SETTINGS = {
+      enabled: true, count: 3, size: 64, speed: 1.2,
+      color: 'random', accessory: 'random',
+      walkOnElements: true, keyboardControls: true,
+      followCursor: false, wheek: true, disabledSites: []
+    };
+    window.chrome = {
+      runtime: {
+        getURL: (p) => '/' + p,
+        onMessage: { addListener() {} }
+      },
+      storage: {
+        sync: {
+          get: async () => ({ moru: STUB_SETTINGS }),
+          set: async () => {}
+        },
+        onChanged: { addListener() {} }
+      }
+    };
+    const log = (m) => { document.getElementById('log').textContent += m + '\n'; };
+    window.addEventListener('error', (e) => log('ERROR: ' + e.message));
+    window.addEventListener('unhandledrejection', (e) => log('REJECT: ' + (e.reason && e.reason.message || e.reason)));
+  </script>
+  <script src="/src/shared/settings.js"></script>
+  <script src="/src/content/character.js"></script>
+  <script src="/src/content/pet.js"></script>
+  <script src="/src/content/main.js"></script>
+  <script>
+    // HUD に各モルモットの状態を出す
+    setInterval(() => {
+      const host = document.getElementById('moru-mode-host');
+      if (!host || !host.shadowRoot) { document.getElementById('hud').textContent = 'no host'; return; }
+      const pets = host.shadowRoot.querySelectorAll('.moru');
+      document.getElementById('hud').textContent =
+        [...pets].map((p, i) => i + ':' + [...p.classList].filter((c) => c.startsWith('st-')).join('|') +
+          ' ' + p.style.transform.replace('translate3d(', '').replace(/,0\)/, '')).join('\n');
+    }, 200);
+  </script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+:root {
+  --bg: #fdf7ee;
+  --card: #ffffff;
+  --ink: #3b2b1e;
+  --muted: #8b7860;
+  --line: #ecdfcc;
+  --accent: #d9813f;
+  --accent-soft: #fbead9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #24201c;
+    --card: #2e2823;
+    --ink: #f2e8db;
+    --muted: #a8987f;
+    --line: #3d352d;
+    --accent: #e79a5c;
+    --accent-soft: #43352a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  width: 320px;
+  margin: 0;
+  padding: 0 0 14px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---- ヘッダー ---- */
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(160deg, var(--accent-soft), transparent 78%);
+  border-bottom: 1px solid var(--line);
+}
+
+.preview {
+  flex: 0 0 auto;
+  width: 108px;
+  height: 62px;
+  overflow: visible;
+  display: grid;
+  place-items: end center;
+  cursor: pointer;
+}
+
+/* moru.css の絶対配置をポップアップ用に打ち消す */
+.preview .moru {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none !important;
+  width: 92px;
+  height: 60px;
+}
+.preview .moru-svg { cursor: pointer; }
+
+.hero-text h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.site {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+/* ---- 行 ---- */
+main { padding: 10px 14px 0; }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.label { flex: 1; }
+.label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+
+.group {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.group h2 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+/* ---- スイッチ ---- */
+.switch { cursor: pointer; }
+.switch input { position: absolute; opacity: 0; pointer-events: none; }
+
+.track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--line);
+  transition: background 0.16s ease;
+}
+.track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  transition: transform 0.16s ease;
+}
+.switch input:checked + .track { background: var(--accent); }
+.switch input:checked + .track::after { transform: translateX(16px); }
+.switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---- チェックボックス ---- */
+.check { cursor: pointer; align-items: flex-start; }
+.check input { margin: 3px 0 0; accent-color: var(--accent); flex: 0 0 auto; }
+
+/* ---- レンジ ---- */
+.range .label { flex: 0 0 108px; }
+.range input { flex: 1; accent-color: var(--accent); min-width: 0; }
+
+/* ---- 毛色 ---- */
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  padding: 4px 0 8px;
+}
+
+.swatch {
+  height: 30px;
+  border: 2px solid var(--line);
+  border-radius: 9px;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+.swatch span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.9);
+}
+.swatch.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+/* ---- アクセサリー ---- */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-bottom: 6px;
+}
+
+.chip {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.chip.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.shuffle {
+  width: 100%;
+  margin: 2px 0 8px;
+  padding: 6px;
+  border: 1px dashed var(--line);
+  border-radius: 9px;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.shuffle:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---- ボタン ---- */
+.cta {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.cta:hover { filter: brightness(1.06); }
+.cta:disabled { opacity: 0.45; cursor: default; filter: none; }
+
+.link {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+body.disabled main > .group,
+body.disabled .cta {
+  opacity: 0.45;
+  pointer-events: none;
+}
