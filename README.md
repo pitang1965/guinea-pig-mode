@@ -55,12 +55,32 @@ src/
     moru.css               Shadow DOM 内のスタイルとアニメーション
   popup/                   設定 UI
   background/service_worker.js   タブごとの OFF バッジ
-tools/                     開発用（アイコン生成・プレビュー・動作確認）
+tools/                     開発用（アイコン生成・プレビュー・動作確認・配布用 ZIP 作成）
 ```
 
 ページ側の CSS と干渉しないよう、描画はすべて Shadow DOM の中で行い、
 スタイルは `adoptedStyleSheets` で流し込んでいます。
 モルモット本体以外はクリックが素通りするので、ページの操作を邪魔しません。
+
+## 配布用 ZIP を作る
+
+```bash
+node tools/pack.mjs
+```
+
+`dist/moru-<version>.zip` ができます。拡張機能の動作に必要なファイルだけが入り、
+`tools/` や `.vscode/` は含まれません。`manifest.json` が ZIP の直下に来るので、
+Chrome ウェブストアに出す場合もそのまま使えます。
+`manifest.json` が参照しているファイルが欠けていれば、その場でエラーになります。
+
+受け取った人のインストール手順:
+
+1. ZIP を展開する
+2. Chrome で `chrome://extensions` を開く
+3. **デベロッパーモード** を ON
+4. **パッケージ化されていない拡張機能を読み込む** で、展開したフォルダを選ぶ
+
+この方法では自動更新されないので、新しい版を渡したら同じ手順で入れ直してもらいます。
 
 ## 開発
 
@@ -84,6 +104,6 @@ node tools/serve.mjs               # http://localhost:8765 でこのフォルダ
 | --- | --- |
 | `storage` | 設定の保存（`chrome.storage.sync`） |
 | `tabs` | ポップアップで現在のサイト名を表示し、「このサイトでは表示しない」を切り替えるため |
-| `<all_urls>` | どのページでもモルモットを表示するため |
+| `<all_urls>`（content_scripts の `matches`） | どのページでもモルモットを表示するため。`host_permissions` は使っていません |
 
 収集・送信するデータはありません。

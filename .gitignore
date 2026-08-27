@@ -14,3 +14,6 @@ Thumbs.db
 # tools/ の一時ファイル（先頭が _ のものは使い捨て）
 tools/_*
 icons/icon512.png
+
+# 配布用の成果物
+dist/
