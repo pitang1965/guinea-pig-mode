@@ -3,6 +3,8 @@
 どのウェブサイトにも、かわいいモルモットの相棒を住まわせる Chrome 拡張機能（Manifest V3）です。
 [Hedgehog Mode](https://chromewebstore.google.com/detail/hedgehog-mode/pkbjccilodggopgideedpodjalmpbjkl) と同じ発想を、はりねずみではなくモルモットで実装しています。
 
+![GitHubのプロフィールページ上を5匹のモルモットが歩き回り、右側に毛色や匹数を選ぶ設定パネルが開いている画面](docs/screenshot.png)
+
 ## できること
 
 - **歩く・走る・寝る・食べる**：画面の下端をうろうろして、たまに寝たりごはんを食べたりします
