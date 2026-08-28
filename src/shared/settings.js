@@ -7,6 +7,7 @@
     count: 1,
     size: 64,               // モルモットの高さ(px)
     speed: 1.0,             // 移動速度の倍率
+    variation: 0.35,        // 個体差の強さ(0〜1)。大きさ・速さ・反応の速さがばらつく
     color: 'ginger',        // ginger | agouti | cream | white | black | tricolor | random
     accessory: 'none',      // none | flower | ribbon | hat | glasses | crown | carrot | random
     variantSeed: 1,         // 増やすとランダムの姿を引き直す

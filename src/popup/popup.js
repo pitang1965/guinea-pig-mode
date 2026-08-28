@@ -18,6 +18,13 @@
     ['random', 'ランダム']
   ];
 
+  // スライダーの数値の見せ方（指定のないものはそのまま出す）
+  const FORMAT = {
+    speed: (v) => Number(v).toFixed(1),
+    variation: (v) => Math.round(v * 100) + '%'
+  };
+  const showValue = (key, v) => (FORMAT[key] ? FORMAT[key](v) : String(v));
+
   const $ = (id) => document.getElementById(id);
   const preview = { color: null, accessory: null };   // ランダム時のプレビュー用の抽選結果
   let settings = null;
@@ -129,7 +136,9 @@
     $('size').value = settings.size;
     $('sizeVal').textContent = settings.size;
     $('speed').value = settings.speed;
-    $('speedVal').textContent = Number(settings.speed).toFixed(1);
+    $('speedVal').textContent = showValue('speed', settings.speed);
+    $('variation').value = settings.variation;
+    $('variationVal').textContent = showValue('variation', settings.variation);
 
     for (const id of ['walkOnElements', 'followCursor', 'keyboardControls', 'wheek']) {
       $(id).checked = !!settings[id];
@@ -154,12 +163,12 @@
     paint();
   }
 
-  function bindRange(id, key, transform) {
+  function bindRange(id, key) {
     const el = $(id);
     el.addEventListener('input', () => {
-      const value = transform ? transform(el.value) : Number(el.value);
+      const value = Number(el.value);
       settings[key] = value;
-      $(id + 'Val').textContent = key === 'speed' ? value.toFixed(1) : value;
+      $(id + 'Val').textContent = showValue(key, value);
       if (key === 'size') renderPreview();
     });
     el.addEventListener('change', () => {
@@ -203,7 +212,8 @@
 
     bindRange('count', 'count');
     bindRange('size', 'size');
-    bindRange('speed', 'speed', (v) => Number(v));
+    bindRange('speed', 'speed');
+    bindRange('variation', 'variation');
 
     for (const id of ['walkOnElements', 'followCursor', 'keyboardControls', 'wheek']) {
       $(id).addEventListener('change', (e) => update({ [id]: e.target.checked }));

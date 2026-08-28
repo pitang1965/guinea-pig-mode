@@ -11,6 +11,12 @@
   const AIR_DRAG  = 0.995;
   const FOOT      = 0.94;   // 要素高さに対する足元の位置
 
+  // 個体差（ばらつき 1.0 のときの振れ幅）
+  const SIZE_SPREAD  = 0.45;   // 大きさ ±45%
+  const SPEED_SPREAD = 0.55;   // 速さ ±55%
+  const REACT_MAX    = 1.1;    // カーソルに反応するまでの待ち時間の上限(s)
+  const AIM_EPS      = 12;     // これ以下のカーソル移動には反応しない(px)
+
   const WHEEKS = ['プイプイ！', 'キュイーン', 'ぷぅ〜', 'キュルルル', 'プッププ', 'ごはん！'];
   const HAPPY  = ['♥', 'プイ♪', 'キュン', 'なでなで♪'];
 
@@ -44,6 +50,8 @@
       this.history = [];
       this.keys = { left: false, right: false };
       this.squashTimer = 0;
+      this.aimX = null;        // 追いかけている先。反応時間ぶん遅れてカーソルに追いつく
+      this.reactTimer = 0;
 
       this.randomizeTiming();
       this.applySettings(ctx.settings);
@@ -71,6 +79,15 @@
 
     /* ---------- 設定 ---------- */
 
+    /**
+     * 個体差のくじを引く。ここでは -1〜1（反応だけ 0〜1）の素の値だけを持ち、
+     * 実際の振れ幅は設定の variation を掛けて applySettings で決める。
+     * こうしておくと、ばらつきの強さを変えても個体の性格（大きい方／速い方）は変わらない。
+     */
+    rollVariation() {
+      this.vary = { size: rand(-1, 1), speed: rand(-1, 1), react: Math.random() };
+    }
+
     applySettings(s) {
       this.settings = s;
       const C = globalThis.MoruCharacter;
@@ -87,12 +104,20 @@
         this.accessorySetting = s.accessory;
         this.accessory = C.resolveAccessory(s.accessory);
       }
+      if (!this.vary || seedChanged) this.rollVariation();
       this.seed = s.variantSeed;
 
-      const changed = this.h !== s.size ||
+      // 個体差。大きさ・速さは設定値を中心に上下し、反応時間は 0 から伸びる
+      const v = clamp(s.variation || 0, 0, 1);
+      const sizeMul = clamp(1 + this.vary.size * v * SIZE_SPREAD, 0.4, 2);
+      this.speedMul = clamp(1 + this.vary.speed * v * SPEED_SPREAD, 0.35, 2.2);
+      this.reactDelay = this.vary.react * v * REACT_MAX;
+
+      const h = Math.max(16, Math.round(s.size * sizeMul));
+      const changed = this.h !== h ||
         this.drawnColor !== this.color || this.drawnAccessory !== this.accessory;
-      this.h = s.size;
-      this.w = s.size * C.ASPECT;
+      this.h = h;
+      this.w = h * C.ASPECT;
 
       if (changed || !this.flip.firstChild) {
         this.drawnColor = this.color;
@@ -103,8 +128,9 @@
       }
       this.el.style.width = this.w + 'px';
       this.el.style.height = this.h + 'px';
-      this.el.style.setProperty('--walk', clamp(0.42 / (s.speed || 1), 0.16, 0.9) + 's');
-      this.bubble.style.fontSize = clamp(s.size * 0.2, 10, 20) + 'px';
+      this.el.style.setProperty('--walk',
+        clamp(0.42 / ((s.speed || 1) * this.speedMul), 0.16, 0.9) + 's');
+      this.bubble.style.fontSize = clamp(this.h * 0.2, 10, 20) + 'px';
       this.setState(this.state, null);
     }
 
@@ -230,6 +256,27 @@
       }
     }
 
+    /* ---------- カーソル追従 ---------- */
+
+    /**
+     * カーソルの位置をそのまま追わず、個体ごとの反応時間ぶん遅れて拾い直す。
+     * 気づくのが早い子と鈍い子ができるので、複数匹いると動き出しがばらける。
+     */
+    trackCursor(dt) {
+      const m = this.ctx.mouse;
+      if (!m.seen) return;
+      if (this.aimX == null) this.aimX = this.x + this.w / 2;   // 最初の一歩も遅れて出す
+      if (Math.abs(m.x - this.aimX) < AIM_EPS) {
+        this.reactTimer = 0;
+        return;
+      }
+      this.reactTimer += dt;
+      if (this.reactTimer >= this.reactDelay) {
+        this.aimX = m.x;
+        this.reactTimer = 0;
+      }
+    }
+
     /* ---------- 行動選択 ---------- */
 
     /** 届く高さにある足場を探して跳び乗る。跳んだら true */
@@ -305,6 +352,7 @@
       }
 
       const s = this.settings;
+      if (s.followCursor) this.trackCursor(dt);
       const wasAir = this.airborne();
       const prevFeet = this.y + this.h * FOOT;
       const onSurface = !!this.platformEl || this.y >= this.groundY() - 1;
@@ -315,8 +363,8 @@
         if (s.keyboardControls && this.index === 0 && (this.keys.left || this.keys.right)) {
           this.dir = this.keys.right ? 1 : -1;
           this.setState('walk', 0.2);
-        } else if (s.followCursor && this.ctx.mouse.seen) {
-          const gap = this.ctx.mouse.x - (this.x + this.w / 2);
+        } else if (s.followCursor && this.aimX != null) {
+          const gap = this.aimX - (this.x + this.w / 2);
           if (Math.abs(gap) > 24) {
             this.dir = gap > 0 ? 1 : -1;
             this.setState(Math.abs(gap) > 320 ? 'run' : 'walk', 0.2);
@@ -329,8 +377,8 @@
 
         // decide() がこのフレームで跳び出していることがあるので、
         // 空中の状態になっていたら横速度を消さない
-        if (this.state === 'walk') this.vx = this.dir * WALK * s.speed;
-        else if (this.state === 'run') this.vx = this.dir * RUN * s.speed;
+        if (this.state === 'walk') this.vx = this.dir * WALK * s.speed * this.speedMul;
+        else if (this.state === 'run') this.vx = this.dir * RUN * s.speed * this.speedMul;
         else if (!this.airborne() && this.state !== 'popcorn') this.vx = 0;
       }
 

@@ -210,7 +210,7 @@ const feet=p=>p.y+p.h*FOOT;
   }
   live.forEach(q=>{q.platformEl=null;q.x=400;q.y=q.groundY();q.vx=0;q.vy=0;q.setState('idle',9);});
   for(let k=0;k<200;k++) __moruDebug().separate();
-  const W=live[0].w;
+  const W=Math.min.apply(null,live.map(q=>q.w));   // 個体差で体格が違うので細い方に合わせる
   const xs=live.map(q=>q.x+q.w/2).sort((a,b)=>a-b);
   const gaps=xs.slice(1).map((v,i)=>v-xs[i]);
   const minGap=Math.min.apply(null,gaps);
@@ -243,6 +243,54 @@ const feet=p=>p.y+p.h*FOOT;
         cs?(cs.animationName+' delay='+cs.animationDelay+' dur='+cs.animationDuration):'no eye');
 
   extra.forEach(q=>{live.splice(live.indexOf(q),1);q.destroy();});
+
+  // 13) 個体差（大きさ・速さ・カーソルへの反応時間）
+  const spread=a=>Math.max.apply(null,a)-Math.min.apply(null,a);
+  const varied=Object.assign({},STUB,{variation:0.6});
+  const vp=[];
+  for(let i=0;i<12;i++){
+    vp.push(new MoruPet({settings:varied,mouse:{x:0,y:0,seen:false},platforms:()=>[]},300+i));
+  }
+  const sizes=vp.map(q=>q.h), speeds=vp.map(q=>q.speedMul), reacts=vp.map(q=>q.reactDelay);
+  const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+  check('大きさがばらつく', spread(sizes)>4, 'min='+Math.min.apply(null,sizes)+' max='+Math.max.apply(null,sizes));
+  check('速さがばらつく', spread(speeds)>0.2, speeds.map(v=>v.toFixed(2)).join(' '));
+  check('反応時間がばらつく', spread(reacts)>0.2, reacts.map(v=>v.toFixed(2)).join(' '));
+  check('設定した大きさが中心になる', Math.abs(mean(sizes)-STUB.size)<STUB.size*0.25,
+        '平均='+mean(sizes).toFixed(1)+' 設定='+STUB.size);
+
+  vp.forEach(q=>q.applySettings(Object.assign({},varied,{variation:0})));
+  check('ばらつき0なら全部そろう',
+        new Set(vp.map(q=>q.h)).size===1 && new Set(vp.map(q=>q.speedMul)).size===1 &&
+        vp.every(q=>q.reactDelay===0), 'h='+vp[0].h);
+
+  // ばらつきの強さを変えても、大きい方／速い方といった個体の性格は入れ替わらない
+  vp.forEach(q=>q.applySettings(Object.assign({},varied,{variation:0.3})));
+  const weak=vp.map(q=>q.speedMul);
+  vp.forEach(q=>q.applySettings(Object.assign({},varied,{variation:0.9})));
+  const strong=vp.map(q=>q.speedMul);
+  check('ばらつきを変えても速い子/遅い子は入れ替わらない',
+        weak.every((v,i)=>(v-1)*(strong[i]-1)>=0) && spread(strong)>spread(weak),
+        '振れ幅 '+spread(weak).toFixed(2)+' -> '+spread(strong).toFixed(2));
+  vp.forEach(q=>q.destroy());
+
+  // 反応時間のあいだはカーソルに気づかない
+  const cursor={x:0,y:0,seen:true};
+  const cfg=Object.assign({},STUB,{variation:1,followCursor:true});
+  const slow=new MoruPet({settings:cfg,mouse:cursor,platforms:()=>[]},400);
+  slow.vary={size:0,speed:0,react:1};        // いちばん鈍い個体に固定する
+  slow.applySettings(cfg);
+  slow.platformEl=null; slow.x=200; slow.y=slow.groundY(); slow.vx=0; slow.vy=0;
+  slow.setState('idle',9);
+  cursor.x=innerWidth-40;
+  const from=slow.x;
+  step(slow,0.5);
+  const early=Math.abs(slow.x-from);
+  step(slow,1.0);
+  const late=Math.abs(slow.x-from);
+  check('反応時間のあいだは動き出さない', early<1, 'reactDelay='+slow.reactDelay.toFixed(2)+'s dx='+early.toFixed(1));
+  check('反応時間が過ぎたら追いかける', late>10 && slow.dir===1, 'dx='+late.toFixed(1)+' dir='+slow.dir);
+  slow.destroy();
 
   say(fails? '=== '+fails+' FAILED ===' : '=== ALL PASSED ===');
 })();
