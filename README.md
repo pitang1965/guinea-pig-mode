@@ -27,6 +27,7 @@
 
 配布用の ZIP は [Releases](https://github.com/pitang1965/guinea-pig-mode/releases/latest) から
 ダウンロードできます（`moru-<version>.zip`）。clone した場合はそのまま次の手順に進めます。
+版ごとの変更点は [CHANGELOG.md](CHANGELOG.md) にまとめてあります。
 
 1. ZIP でダウンロードした場合は展開する
 2. Chrome で `chrome://extensions` を開く

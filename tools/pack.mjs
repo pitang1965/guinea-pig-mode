@@ -15,6 +15,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const INCLUDE = [
   'manifest.json',
   'README.md',
+  'CHANGELOG.md',   // README から相対リンクしているので一緒に入れる
   'icons',
   'src'
 ];
