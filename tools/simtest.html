@@ -284,13 +284,62 @@ const feet=p=>p.y+p.h*FOOT;
   slow.setState('idle',9);
   cursor.x=innerWidth-40;
   const from=slow.x;
-  step(slow,0.5);
+  step(slow,slow.reactDelay*0.5);          // 反応時間の半分では、まだ気づかない
   const early=Math.abs(slow.x-from);
-  step(slow,1.0);
+  step(slow,slow.reactDelay*0.5+0.5);      // 過ぎたら追い始める
   const late=Math.abs(slow.x-from);
   check('反応時間のあいだは動き出さない', early<1, 'reactDelay='+slow.reactDelay.toFixed(2)+'s dx='+early.toFixed(1));
   check('反応時間が過ぎたら追いかける', late>10 && slow.dir===1, 'dx='+late.toFixed(1)+' dir='+slow.dir);
   slow.destroy();
+
+  // 14) 体格を基準に速度・歩幅・足の回転がそろっているか
+  const STRIDE=44*0.42/64;                    // 基準体格での歩幅／体高
+  const mkAt=(patch,i)=>new MoruPet(
+    {settings:Object.assign({},STUB,patch),mouse:{x:0,y:0,seen:false},platforms:()=>[]},500+i);
+  const gait=(q,n)=>parseFloat(q.el.style.getPropertyValue(n));
+  const speedIn=(q,st)=>{
+    q.platformEl=null; q.x=innerWidth/2; q.y=q.groundY(); q.vx=0; q.vy=0;
+    q.setState(st,9); q.update(1/60); return Math.abs(q.vx);
+  };
+  const small=mkAt({size:40},0), big=mkAt({size:120},1);
+  const vs=speedIn(small,'walk'), vb=speedIn(big,'walk');
+  check('体格に比例して速く歩く', Math.abs(vb/vs-big.h/small.h)<0.02,
+        small.h+'px:'+vs.toFixed(1)+'px/s  '+big.h+'px:'+vb.toFixed(1)+'px/s');
+  const strideS=vs*gait(small,'--walk'), strideB=vb*gait(big,'--walk');
+  check('歩幅も体格に比例する',
+        Math.abs(strideS/small.h-STRIDE)<0.01 && Math.abs(strideB/big.h-STRIDE)<0.01,
+        '歩幅/体高 '+(strideS/small.h).toFixed(3)+' / '+(strideB/big.h).toFixed(3));
+
+  const runStride=speedIn(small,'run')*gait(small,'--run');
+  check('走ると足も速く回る', gait(small,'--run')<gait(small,'--walk'),
+        'walk='+gait(small,'--walk').toFixed(3)+'s run='+gait(small,'--run').toFixed(3)+'s');
+  check('走りの歩幅は歩きの約1.7倍に収まる', Math.abs(runStride/strideS-Math.sqrt(3))<0.05,
+        (runStride/strideS).toFixed(2)+'倍');
+
+  // 速さを変えても歩幅は変わらない＝足が滑らない
+  const strideAt=q=>speedIn(q,'walk')*gait(q,'--walk')/q.h;
+  const fast=mkAt({speed:2.5},2), slow2=mkAt({speed:0.4},3);
+  check('速さを変えても歩幅は一定',
+        Math.abs(strideAt(fast)-STRIDE)<0.01 && Math.abs(strideAt(slow2)-STRIDE)<0.01,
+        '速2.5→'+strideAt(fast).toFixed(3)+'  速0.4→'+strideAt(slow2).toFixed(3));
+
+  // 上下限で丸められる極端な設定でも、速度と周期が同じ倍率から出ているのでずれない
+  const edge=mkAt({speed:0.4,variation:1},4);
+  edge.vary={size:0,speed:-1,react:0};
+  edge.applySettings(Object.assign({},STUB,{speed:0.4,variation:1}));
+  check('極端な設定でも足は滑らない', Math.abs(strideAt(edge)-STRIDE)<0.01,
+        '歩幅/体高='+strideAt(edge).toFixed(3)+' 周期='+gait(edge,'--walk').toFixed(3)+'s');
+  [small,big,fast,slow2,edge].forEach(q=>q.destroy());
+
+  // 走りの周期は shorthand の後ろで差し替えているので、実際に効いているか実物で見る
+  const livePet=__moruDebug().pets[0];
+  const durOf=st=>{livePet.setState(st,9);
+    return parseFloat(getComputedStyle(livePet.el.querySelector('.leg-a')).animationDuration);};
+  const runDur=durOf('run'), walkDur=durOf('walk');
+  check('走りの周期が CSS に効いている',
+        Math.abs(runDur-gait(livePet,'--run'))<0.005 && Math.abs(walkDur-gait(livePet,'--walk'))<0.005,
+        'walk='+walkDur+'s run='+runDur+'s');
+  livePet.setState('idle',1);
 
   say(fails? '=== '+fails+' FAILED ===' : '=== ALL PASSED ===');
 })();

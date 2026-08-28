@@ -13,6 +13,7 @@
   will-change: transform;
   transform: translate3d(0, 0, 0);
   --walk: 0.42s;
+  --run: 0.24s;   /* 走りは歩幅を伸ばしつつ足も速く回す（JS が --walk と一緒に更新する） */
   --sh: 1;
 
   /* 個体ごとに JS がずらす（全頭が同時にまばたきしないように） */
@@ -90,6 +91,9 @@
   animation: moru-bob var(--walk) ease-in-out infinite;
   animation-delay: var(--gait-delay);
 }
+
+/* 走りは歩きより速く足を回す。上のショートハンドより後ろに置いて周期だけ差し替える */
+.st-run .leg-a, .st-run .leg-b, .st-run .moru-body { animation-duration: var(--run); }
 
 @keyframes moru-breathe {
   0%, 100% { transform: scale(1, 1); }

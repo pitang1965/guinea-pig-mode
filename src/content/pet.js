@@ -11,10 +11,23 @@
   const AIR_DRAG  = 0.995;
   const FOOT      = 0.94;   // 要素高さに対する足元の位置
 
-  // 個体差（ばらつき 1.0 のときの振れ幅）
-  const SIZE_SPREAD  = 0.45;   // 大きさ ±45%
-  const SPEED_SPREAD = 0.55;   // 速さ ±55%
-  const REACT_MAX    = 1.1;    // カーソルに反応するまでの待ち時間の上限(s)
+  // 速度・歩幅は体格を基準にそろえる。
+  // 絶対速度を体高に比例させると、歩幅（速度 × 足の周期）も体高に比例し、
+  // 大きい子も小さい子も同じ歩き方に見える。
+  const BASE_SIZE   = 64;    // 基準になる体高(px)。設定の既定値と同じ
+  const GAIT        = 0.42;  // 基準体格・速さ1.0 のときの足の周期(s)
+  const RUN_CADENCE = Math.sqrt(RUN / WALK);   // 走りは歩幅と回転で速さを分担する
+  // 速度と周期に同じ倍率を使うための上下限。ここで丸めるので足は必ず接地して見える
+  const SPEED_MIN   = 0.3;
+  const SPEED_MAX   = 3.5;
+
+  // 個体差（ばらつき 1.0 のときの振れ幅）。体格はそろえ気味に、
+  // 動きの気質（速さ・反応）は大きく振る。
+  const SIZE_SPREAD  = 0.22;   // 大きさ ±22%
+  // 速さは足し引きではなく倍率で振る。遅い側と速い側が同じ比率で開き、
+  // 上下限で頭打ちにならない。足の回転数もこの倍率にそのまま乗る
+  const SPEED_RATIO  = 3.2;    // 最大で 1/3.2 倍 〜 3.2 倍
+  const REACT_MAX    = 3.0;    // カーソルに反応するまでの待ち時間の上限(s)
   const AIM_EPS      = 12;     // これ以下のカーソル移動には反応しない(px)
 
   const WHEEKS = ['プイプイ！', 'キュイーン', 'ぷぅ〜', 'キュルルル', 'プッププ', 'ごはん！'];
@@ -68,13 +81,13 @@
       const st = this.el.style;
       const stagger = (name, min, max) => {
         const dur = rand(min, max);
-        st.setProperty('--' + name + '-dur', dur.toFixed(2) + 's');
-        st.setProperty('--' + name + '-delay', (-rand(0, dur)).toFixed(2) + 's');
+        st.setProperty('--' + name + '-dur', dur.toFixed(3) + 's');
+        st.setProperty('--' + name + '-delay', (-rand(0, dur)).toFixed(3) + 's');
       };
       stagger('blink', 3.6, 5.8);
       stagger('ear', 4.2, 7.0);
       stagger('breathe', 2.3, 3.5);
-      st.setProperty('--gait-delay', (-rand(0, 0.9)).toFixed(2) + 's');
+      st.setProperty('--gait-delay', (-rand(0, 0.9)).toFixed(3) + 's');
     }
 
     /* ---------- 設定 ---------- */
@@ -107,10 +120,13 @@
       if (!this.vary || seedChanged) this.rollVariation();
       this.seed = s.variantSeed;
 
-      // 個体差。大きさ・速さは設定値を中心に上下し、反応時間は 0 から伸びる
+      // 個体差。大きさは設定値を中心に上下、速さは設定値の何倍かで振れ、
+      // 反応時間は 0 から伸びる
       const v = clamp(s.variation || 0, 0, 1);
       const sizeMul = clamp(1 + this.vary.size * v * SIZE_SPREAD, 0.4, 2);
-      this.speedMul = clamp(1 + this.vary.speed * v * SPEED_SPREAD, 0.35, 2.2);
+      // くじは -1〜1、ばらつきは 0〜1 なので、倍率は 1/SPEED_RATIO 〜 SPEED_RATIO に収まる。
+      // 速さスライダーと掛け合わせた後の歯止めは下の SPEED_MIN / SPEED_MAX が持つ
+      this.speedMul = Math.pow(SPEED_RATIO, this.vary.speed * v);
       this.reactDelay = this.vary.react * v * REACT_MAX;
 
       const h = Math.max(16, Math.round(s.size * sizeMul));
@@ -118,6 +134,12 @@
         this.drawnColor !== this.color || this.drawnAccessory !== this.accessory;
       this.h = h;
       this.w = h * C.ASPECT;
+
+      // 実際に速度へ掛ける倍率。周期の算出にも同じ m を使うので、
+      // 上下限で丸めても「速度と足の回転」がずれない
+      this.sizeScale = h / BASE_SIZE;
+      const m = clamp((s.speed || 1) * this.speedMul, SPEED_MIN, SPEED_MAX);
+      this.moveMul = m * this.sizeScale;
 
       if (changed || !this.flip.firstChild) {
         this.drawnColor = this.color;
@@ -128,8 +150,8 @@
       }
       this.el.style.width = this.w + 'px';
       this.el.style.height = this.h + 'px';
-      this.el.style.setProperty('--walk',
-        clamp(0.42 / ((s.speed || 1) * this.speedMul), 0.16, 0.9) + 's');
+      this.el.style.setProperty('--walk', (GAIT / m).toFixed(3) + 's');
+      this.el.style.setProperty('--run', (GAIT / (m * RUN_CADENCE)).toFixed(3) + 's');
       this.bubble.style.fontSize = clamp(this.h * 0.2, 10, 20) + 'px';
       this.setState(this.state, null);
     }
@@ -377,8 +399,8 @@
 
         // decide() がこのフレームで跳び出していることがあるので、
         // 空中の状態になっていたら横速度を消さない
-        if (this.state === 'walk') this.vx = this.dir * WALK * s.speed * this.speedMul;
-        else if (this.state === 'run') this.vx = this.dir * RUN * s.speed * this.speedMul;
+        if (this.state === 'walk') this.vx = this.dir * WALK * this.moveMul;
+        else if (this.state === 'run') this.vx = this.dir * RUN * this.moveMul;
         else if (!this.airborne() && this.state !== 'popcorn') this.vx = 0;
       }
 
