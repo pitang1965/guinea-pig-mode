@@ -24,10 +24,14 @@
 
 ## インストール（開発者モード）
 
-1. Chrome で `chrome://extensions` を開く
-2. 右上の **デベロッパーモード** を ON
-3. **パッケージ化されていない拡張機能を読み込む** をクリック
-4. このフォルダ（`manifest.json` のある階層）を選択
+配布用の ZIP は [Releases](https://github.com/pitang1965/guinea-pig-mode/releases/latest) から
+ダウンロードできます（`moru-<version>.zip`）。clone した場合はそのまま次の手順に進めます。
+
+1. ZIP でダウンロードした場合は展開する
+2. Chrome で `chrome://extensions` を開く
+3. 右上の **デベロッパーモード** を ON
+4. **パッケージ化されていない拡張機能を読み込む** をクリック
+5. このフォルダ（`manifest.json` のある階層）を選択
 
 ツールバーのモルモットアイコンから設定を開けます。
 すでに開いていたタブには、リロード後に反映されます。
